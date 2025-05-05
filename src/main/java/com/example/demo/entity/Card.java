@@ -8,6 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
@@ -17,7 +18,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Card {
+public class Card implements Serializable {
 
     @Id
     @Tsid

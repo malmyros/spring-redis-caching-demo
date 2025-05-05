@@ -10,9 +10,6 @@ import com.example.demo.factory.CardResponseFactory;
 import com.example.demo.repository.CardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,21 +21,21 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class CardService {
 
-    private final CardRepository cardRepository;
     private final CardFactory cardFactory;
     private final CardResponseFactory cardResponseFactory;
+    private final CardRepositoryService cardRepositoryService;
+    private final CardRepository cardRepository;
 
     public CardResponse orderCard(
             OrderCardRequest orderCardRequest) {
 
-        Card card = cardFactory.getCard(orderCardRequest);
-        Card storedCard = cardRepository.save(card);
-        log.info("Issued a new card {}", card.getId());
+        Card cardToStore = cardFactory.getCard(orderCardRequest);
+        Card card = cardRepositoryService.saveCard(cardToStore);
 
-        return cardResponseFactory.getCardResponse(storedCard);
+        log.info("Issued a new card {}", card.getId());
+        return cardResponseFactory.getCardResponse(card);
     }
 
-    @Cacheable(value = "cards", key = "#id")
     public CardResponse getCard(Long id) {
 
         Card card = cardRepository
@@ -49,29 +46,24 @@ public class CardService {
         return cardResponseFactory.getCardResponse(card);
     }
 
-    @CachePut(value = "cards", key = "#id")
     public CardResponse updateCard(
             Long id,
             UpdateCardRequest updateCardRequest) {
 
-        Card card = cardRepository
-                .findCardById(id)
-                .orElseThrow(() -> new CardNotFoundException(id));
+        Card cardToUpdate = cardRepositoryService.getCardById(id);
         log.info("Found card {}", id);
 
-        card.setEmbossedName(updateCardRequest.embossedName());
-        card.setUpdatedAt(Instant.now());
+        cardToUpdate.setEmbossedName(updateCardRequest.embossedName());
+        cardToUpdate.setUpdatedAt(Instant.now());
 
-        Card updatedCard = cardRepository.save(card);
+        Card updatedCard = cardRepositoryService.saveCard(cardToUpdate);
         log.info("Updated card {} details", id);
 
         return cardResponseFactory.getCardResponse(updatedCard);
     }
 
-    @CacheEvict(value = "cards", key = "#id")
     public void deleteCard(Long id) {
-
-        cardRepository.deleteById(id);
+        cardRepositoryService.deleteCard(id);
         log.info("Deleted card {}", id);
     }
 
@@ -81,6 +73,7 @@ public class CardService {
                 .asLongStream()
                 .mapToObj(l -> cardFactory.getCard())
                 .toList();
+
         cardRepository.saveAll(cards);
         log.info("Stored {} new cards", cards.size());
     }

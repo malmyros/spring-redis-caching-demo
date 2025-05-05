@@ -7,17 +7,17 @@ import jakarta.validation.constraints.NotNull;
 
 public record OrderCardRequest(
 
-        @NotBlank
+        @NotBlank(message = "The firstname cannot be blank")
         @Schema(description = "The customer's first name to use when computing the card's embossed name",
                 example = "John")
         String firstname,
 
-        @NotBlank
+        @NotBlank(message = "The surname cannot be blank")
         @Schema(description = "The customer's surname to use when computing the card's embossed name",
                 example = "Doe")
         String surname,
 
-        @NotNull
+        @NotNull(message = "The card form type cannot be null")
         @Schema(description = "The for the card to issue",
                 example = "VIRTUAL")
         CardFormType cardFormType
